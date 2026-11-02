@@ -1,0 +1,30 @@
+<Solution>
+  <Folder Name="/docs/">
+    <File Path="API.md" />
+    <File Path="Architecture.md" />
+    <File Path="DatabaseDesign.md" />
+    <File Path="DevelopmentGuide.md" />
+    <File Path="Requirements.md" />
+    <File Path="Roadmap.md" />
+    <File Path="Testing.md" />
+  </Folder>
+  <Folder Name="/src/" />
+  <Folder Name="/src/API/">
+    <Project Path="JobHunter.API/JobHunter.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Application/">
+    <Project Path="JobHunter.Application/JobHunter.Application.csproj" />
+  </Folder>
+  <Folder Name="/src/Domain/">
+    <Project Path="JobHunter.Domain/JobHunter.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/Infrastructure/">
+    <Project Path="JobHunter.Infrastructure/JobHunter.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Presentation/">
+    <Project Path="JobHunter.Presentation/JobHunter.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/src/Test/">
+    <Project Path="JobHunter.Test/JobHunter.Test.csproj" />
+  </Folder>
+</Solution>
