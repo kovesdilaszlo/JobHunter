@@ -1,419 +1,369 @@
 
-# JobHunter - Development Roadmap
+# JobHunter - Database Design
 
-## 1. Project Vision
+## 1. Overview
 
-JobHunter is a personal job discovery and application tracking platform for junior IT opportunities.
+JobHunter will use Microsoft SQL Server with Entity Framework Core.
 
-The system will aggregate job advertisements, eliminate confirmed duplicates, provide editable search preferences, and track applications through a web interface.
+The database stores logical job advertisements, source references, application tracking information, search profiles, and search execution history.
 
-Development will follow incremental and testable milestones.
+This document defines the proposed database schema.
 
-## 2. Current Project Status
+No database tables have been implemented yet.
 
-**Phase:** Planning and documentation.
+## 2. Design Principles
 
-Completed activities:
+- Use GUID primary keys.
+- Maintain referential integrity.
+- Separate logical advertisements from external source references.
+- Support duplicate detection.
+- Preserve application tracking information.
+- Support configurable search profiles.
+- Record background execution results.
+- Use UTC-based timestamps.
+- Manage schema changes through EF Core migrations.
 
-- [x] Define project objectives.
-- [x] Select technology stack.
-- [x] Define Clean Architecture.
-- [x] Create six Visual Studio projects.
-- [x] Create project folder structure.
-- [x] Configure project references.
-- [x] Define initial functional requirements.
-- [x] Define external job sources.
-- [x] Define duplicate detection strategy.
-- [x] Define automatic search behavior.
-- [x] Prepare initial documentation.
+## 3. Entity Overview
 
-Pending:
+Planned entities:
 
-- [ ] Verify complete Solution build.
-- [ ] Implement Domain layer.
-- [ ] Implement Application layer.
-- [ ] Implement Infrastructure layer.
-- [ ] Implement API endpoints.
-- [ ] Implement Blazor interface.
-- [ ] Implement automated tests.
+1. JobPosting.
+2. JobPostingSource.
+3. JobApplication.
+4. JobSearchProfile.
+5. SearchExecution.
 
-## 3. Phase 1 - Project Foundation
+## 4. JobPosting
 
-### Objective
+Represents one logical employment opportunity.
 
-Prepare a stable development environment.
+| Column | SQL Type | Required | Description |
+|---|---|---|---|
+| Id | uniqueidentifier | Yes | Primary key |
+| Title | nvarchar(250) | Yes | Position title |
+| Company | nvarchar(200) | Yes | Company name |
+| Location | nvarchar(250) | Yes | Job location |
+| Description | nvarchar(max) | Yes | Job description |
+| WorkArrangement | int | Yes | On-site, hybrid, or remote |
+| SalaryMin | decimal(18,2) | No | Minimum salary |
+| SalaryMax | decimal(18,2) | No | Maximum salary |
+| Currency | nvarchar(3) | No | Currency code |
+| PublishedAt | datetimeoffset | No | Publication timestamp |
+| DiscoveredAt | datetimeoffset | Yes | First discovery |
+| Status | int | Yes | Application status |
+| IsArchived | bit | Yes | Archive flag |
+| ArchivedAt | datetimeoffset | No | Archive timestamp |
 
-### Tasks
+### Constraints
 
-- [ ] Verify Solution build.
-- [ ] Verify project references.
-- [ ] Configure Git repository.
-- [ ] Configure GitHub repository.
-- [ ] Review .gitignore.
-- [ ] Verify .NET 10 compatibility.
-- [ ] Review documentation consistency.
+- Id is the primary key.
+- Title and Company must not be empty.
+- Salary values must not be negative.
+- SalaryMin must not exceed SalaryMax.
+- DiscoveredAt is required.
+- ArchivedAt should be set when an advertisement is archived.
 
-### Deliverable
+### Indexes
 
-A buildable and documented Solution.
+Recommended indexes:
 
-## 4. Phase 2 - Domain Layer
+- Status.
+- DiscoveredAt.
+- Company.
+- IsArchived.
+- WorkArrangement.
 
-### Objective
+## 5. JobPostingSource
 
-Implement the core business model.
+Represents one external reference to a logical advertisement.
 
-### Tasks
+A JobPosting may have multiple JobPostingSource records.
 
-- [ ] Implement JobPosting.
-- [ ] Implement JobPostingSource.
-- [ ] Implement JobApplication.
-- [ ] Implement JobSearchProfile.
-- [ ] Define ApplicationStatus.
-- [ ] Define JobSourceType.
-- [ ] Define WorkArrangement.
-- [ ] Implement entity validation.
-- [ ] Implement domain business rules.
-- [ ] Write Domain unit tests.
+| Column | SQL Type | Required | Description |
+|---|---|---|---|
+| Id | uniqueidentifier | Yes | Primary key |
+| JobPostingId | uniqueidentifier | Yes | Related logical job |
+| SourceType | int | Yes | Provider identifier |
+| ExternalId | nvarchar(250) | No | Provider advertisement ID |
+| OriginalUrl | nvarchar(2048) | Yes | Source URL |
+| NormalizedUrl | nvarchar(2048) | Yes | Normalized source URL |
+| UrlFingerprint | varbinary(32) | Yes | SHA-256 fingerprint |
+| DiscoveredAt | datetimeoffset | Yes | Discovery timestamp |
+| LastSeenAt | datetimeoffset | No | Last provider observation |
 
-### Deliverable
+### Relationships
 
-A tested Domain layer representing advertisements, source references, and search profiles.
+JobPosting has a one-to-many relationship with JobPostingSource.
 
-## 5. Phase 3 - Application Layer
+Every JobPostingSource must reference an existing JobPosting.
 
-### Objective
+### Duplicate Constraints
 
-Implement business workflows independently of technical infrastructure.
+Recommended uniqueness rules:
 
-### Tasks
+- Unique combination of SourceType and ExternalId when ExternalId is present.
+- Unique UrlFingerprint for equivalent normalized URLs.
 
-- [ ] Define repository interfaces.
-- [ ] Define service interfaces.
-- [ ] Define provider abstraction.
-- [ ] Implement DTOs.
-- [ ] Implement JobService.
-- [ ] Implement SearchProfileService.
-- [ ] Implement application status management.
-- [ ] Implement duplicate detection service.
-- [ ] Implement search coordination.
-- [ ] Write Application unit tests.
+The full normalized URL must be retained to verify fingerprint matches.
 
-### Deliverable
+A fixed-length fingerprint avoids SQL Server index key length limitations associated with long URL strings.
 
-Testable application services and interfaces.
+### Notes
 
-## 6. Phase 4 - Persistence
+URL normalization must preserve meaningful identifiers.
 
-### Objective
+Tracking parameters may be removed only when known to be nonessential.
 
-Store application data in SQL Server.
+## 6. JobApplication
 
-### Tasks
+Stores application-specific information.
 
-- [ ] Install EF Core packages.
-- [ ] Configure SQL Server.
-- [ ] Implement JobHunterDbContext.
-- [ ] Configure entity relationships.
-- [ ] Configure database constraints.
-- [ ] Implement repositories.
-- [ ] Create initial migration.
-- [ ] Apply migration.
-- [ ] Test duplicate uniqueness constraints.
-- [ ] Write persistence integration tests.
+| Column | SQL Type | Required | Description |
+|---|---|---|---|
+| Id | uniqueidentifier | Yes | Primary key |
+| JobPostingId | uniqueidentifier | Yes | Related job |
+| AppliedAt | datetimeoffset | No | Submission timestamp |
+| Status | int | Yes | Application status |
+| Notes | nvarchar(max) | No | Personal notes |
+| LastUpdatedAt | datetimeoffset | Yes | Last update |
 
-### Deliverable
+### Relationship
 
-Functional relational persistence.
+In the initial single-user design:
 
-## 7. Phase 5 - REST API
+JobPosting has zero or one JobApplication.
 
-### Objective
+JobApplication has exactly one JobPosting.
 
-Expose application functionality through HTTP.
+A unique index on JobPostingId enforces this relationship.
 
-### Tasks
+### Status Consistency
 
-- [ ] Configure dependency injection.
-- [ ] Implement JobsController.
-- [ ] Implement SearchProfilesController.
-- [ ] Implement application status endpoints.
-- [ ] Implement source reference handling.
-- [ ] Implement validation.
-- [ ] Implement consistent error responses.
-- [ ] Configure OpenAPI.
-- [ ] Write API integration tests.
+JobPosting.Status is used for quick listing and filtering.
 
-### Deliverable
+JobApplication.Status may represent detailed application tracking.
 
-A functional REST API.
+If both fields are retained, the application must define and enforce synchronization rules.
 
-## 8. Phase 6 - Blazor Web Interface
+A future refinement may move status ownership to one entity to avoid redundant state.
 
-### Objective
+## 7. JobSearchProfile
 
-Provide a usable interface for job management.
+Stores editable job search preferences.
 
-### Tasks
+| Column | SQL Type | Required | Description |
+|---|---|---|---|
+| Id | uniqueidentifier | Yes | Primary key |
+| Name | nvarchar(150) | Yes | Profile name |
+| Keywords | nvarchar(max) | Yes | Search keywords |
+| Location | nvarchar(250) | No | Preferred location |
+| IncludeRemote | bit | Yes | Include remote jobs |
+| IsEnabled | bit | Yes | Active profile |
+| CreatedAt | datetimeoffset | Yes | Creation timestamp |
+| UpdatedAt | datetimeoffset | Yes | Modification timestamp |
 
-- [ ] Configure API HttpClient.
-- [ ] Create dashboard page.
-- [ ] Create job listing page.
-- [ ] Create job details page.
-- [ ] Add search filters.
-- [ ] Add manual job entry form.
-- [ ] Add application status controls.
-- [ ] Add source link display.
-- [ ] Add advertisement archiving.
-- [ ] Add loading and error states.
-- [ ] Implement responsive layout.
+### Operations
 
-### Deliverable
+The system shall support:
 
-A functional Blazor interface connected to the API.
+- Create.
+- Read.
+- Update.
+- Delete.
+- Enable.
+- Disable.
 
-## 9. Phase 7 - Editable Search Profiles
+### Initial Profiles
 
-### Objective
+Suggested profiles:
 
-Allow search preferences to be managed through the web interface.
+- Junior .NET Developer.
+- Junior Software Developer.
+- Junior Data Analyst.
+- Junior BI Analyst.
+- Junior SQL Developer.
+- Junior IT Support.
+- Junior System Administrator.
 
-### Tasks
+Profiles are editable and not hardcoded permanently.
 
-- [ ] Create search profile listing page.
-- [ ] Implement profile creation.
-- [ ] Implement profile editing.
-- [ ] Implement profile deletion.
-- [ ] Implement enable and disable controls.
-- [ ] Support keyword configuration.
-- [ ] Support location configuration.
-- [ ] Support remote work preferences.
-- [ ] Validate profile input.
-- [ ] Write relevant tests.
+## 8. SearchExecution
 
-### Deliverable
+Records automated and manual search executions.
 
-Fully editable search profiles.
+| Column | SQL Type | Required | Description |
+|---|---|---|---|
+| Id | uniqueidentifier | Yes | Primary key |
+| JobSearchProfileId | uniqueidentifier | Yes | Search profile |
+| ProviderName | nvarchar(150) | Yes | Provider |
+| StartedAt | datetimeoffset | Yes | Start timestamp |
+| CompletedAt | datetimeoffset | No | Completion timestamp |
+| Status | int | Yes | Execution status |
+| TriggerType | int | Yes | Manual, startup, scheduled |
+| RetrievedCount | int | Yes | Retrieved advertisements |
+| InsertedCount | int | Yes | Newly stored advertisements |
+| DuplicateCount | int | Yes | Detected duplicates |
+| ErrorMessage | nvarchar(max) | No | Sanitized error details |
 
-## 10. Phase 8 - Jooble Integration
+### Execution Statuses
 
-### Objective
+- Pending.
+- Running.
+- Completed.
+- Failed.
+- PartiallyCompleted.
+- Cancelled.
 
-Implement the first automated job provider.
+### Trigger Types
 
-### Tasks
+- Manual.
+- Startup.
+- Scheduled.
 
-- [ ] Obtain authorized Jooble API credentials.
-- [ ] Review current API documentation.
-- [ ] Confirm applicable request limits.
-- [ ] Implement JoobleJobProvider.
-- [ ] Implement request construction.
-- [ ] Implement response normalization.
-- [ ] Handle API errors.
-- [ ] Handle rate limits.
-- [ ] Store retrieved advertisements.
-- [ ] Add source references.
-- [ ] Test provider behavior with mocked HTTP responses.
+### Relationships
 
-### Deliverable
+JobSearchProfile has a one-to-many relationship with SearchExecution.
 
-Automated job discovery through Jooble, subject to API access.
+Each SearchExecution references one profile.
 
-## 11. Phase 9 - LinkedIn and No Fluff Jobs
+Deleting a profile should not silently destroy historical execution records.
 
-### Objective
+A restrict-delete policy or an explicit historical retention strategy is recommended.
 
-Support advertisements from additional target platforms.
+## 9. Relationship Diagram
 
-### Tasks
+```text
+JobPosting
+    |
+    | 1 : N
+    |
+JobPostingSource
 
-- [ ] Support manual LinkedIn advertisement links.
-- [ ] Support manual No Fluff Jobs advertisement links.
-- [ ] Identify source type from supported URLs where practical.
-- [ ] Validate URLs.
-- [ ] Associate source links with logical advertisements.
-- [ ] Investigate authorized automated integration options.
-- [ ] Document integration restrictions.
+JobPosting
+    |
+    | 1 : 0..1
+    |
+JobApplication
 
-### Deliverable
+JobSearchProfile
+    |
+    | 1 : N
+    |
+SearchExecution
+```
 
-Manual link management for LinkedIn and No Fluff Jobs.
+## 10. Duplicate Detection Strategy
 
-Automated collection from these platforms is not required for the MVP.
+### Level 1: Provider Identifier
 
-## 12. Phase 10 - Duplicate Detection
+Compare:
 
-### Objective
+- SourceType.
+- ExternalId.
 
-Prevent duplicate logical advertisements.
+A matching pair identifies a confirmed duplicate.
 
-### Tasks
+### Level 2: Normalized URL
 
-- [ ] Implement URL normalization.
-- [ ] Implement provider identifier matching.
-- [ ] Implement URL fingerprinting.
-- [ ] Implement company name normalization.
-- [ ] Implement job title normalization.
-- [ ] Implement location comparison.
-- [ ] Define conservative matching rules.
-- [ ] Associate confirmed duplicate sources.
-- [ ] Preserve uncertain matches separately.
-- [ ] Test database concurrency behavior.
-- [ ] Write duplicate detection tests.
+Compare normalized URL fingerprints.
 
-### Deliverable
+Verify the corresponding normalized URLs before merging.
 
-Reliable duplicate prevention and multi-source advertisement support.
+### Level 3: Similarity
 
-## 13. Phase 11 - Automatic Search Scheduling
+Compare:
 
-### Objective
+- Company name.
+- Job title.
+- Location.
+- Additional metadata.
 
-Automate job searches while the backend host is running.
+Similarity alone does not always prove that two advertisements represent the same opportunity.
 
-### Tasks
+### Level 4: Persistence
 
-- [ ] Implement BackgroundService.
-- [ ] Configure search intervals.
-- [ ] Check overdue searches on startup.
-- [ ] Execute enabled search profiles.
-- [ ] Respect provider usage limits.
-- [ ] Prevent overlapping executions.
-- [ ] Implement cancellation.
-- [ ] Record execution history.
-- [ ] Handle provider failures.
-- [ ] Add manual Search Now functionality.
-- [ ] Write scheduling tests.
+When a confirmed duplicate is discovered:
 
-### Deliverable
+1. Locate the existing JobPosting.
+2. Add the new JobPostingSource if it does not exist.
+3. Update LastSeenAt where appropriate.
+4. Do not create another logical JobPosting.
 
-Automatic and manually triggered job discovery.
+When a potential duplicate is uncertain:
 
-## 14. Phase 12 - Dashboard
+1. Preserve the advertisement separately.
+2. Avoid destructive merging.
+3. Optionally flag the match for later review.
 
-### Objective
+## 11. Entity Framework Core
 
-Provide a centralized overview of the job search.
+The Infrastructure project will contain:
 
-### Tasks
+```text
+Persistence/
+├── JobHunterDbContext.cs
+├── Configurations/
+└── Migrations/
+```
 
-- [ ] Display total advertisements.
-- [ ] Display newly discovered advertisements.
-- [ ] Display saved advertisements.
-- [ ] Display submitted applications.
-- [ ] Display interviews.
-- [ ] Display offers received.
-- [ ] Display recent search executions.
-- [ ] Add navigation to relevant records.
+Planned DbSets:
 
-### Deliverable
+```csharp
+public DbSet<JobPosting> JobPostings => Set<JobPosting>();
 
-Interactive job search dashboard.
+public DbSet<JobPostingSource> JobPostingSources
+    => Set<JobPostingSource>();
 
-## 15. Phase 13 - Quality Assurance
+public DbSet<JobApplication> JobApplications
+    => Set<JobApplication>();
 
-### Objective
+public DbSet<JobSearchProfile> JobSearchProfiles
+    => Set<JobSearchProfile>();
 
-Validate the complete application.
+public DbSet<SearchExecution> SearchExecutions
+    => Set<SearchExecution>();
+```
 
-### Tasks
+These declarations are illustrative and require the corresponding entity classes.
 
-- [ ] Expand Domain tests.
-- [ ] Expand Application tests.
-- [ ] Expand persistence tests.
-- [ ] Expand API tests.
-- [ ] Test duplicate detection.
-- [ ] Test provider failures.
-- [ ] Test scheduled execution.
-- [ ] Test Blazor workflows.
-- [ ] Review logging.
-- [ ] Review security.
-- [ ] Review documentation.
+## 12. Migration Strategy
 
-### Deliverable
+1. Define Domain entities.
+2. Configure entity mappings.
+3. Create the initial EF Core migration.
+4. Review generated SQL and constraints.
+5. Apply the migration to the development database.
+6. Run integration tests.
+7. Commit migration files to source control.
 
-A tested MVP.
+## 13. Data Retention
 
-## 16. Phase 14 - Deployment Preparation
+Advertisements should be archived rather than automatically deleted.
 
-### Objective
+Search execution history may be retained for troubleshooting and reporting.
 
-Prepare the application for reliable local or self-hosted use.
+Retention periods may be configurable in future versions.
 
-### Tasks
+## 14. Security
 
-- [ ] Configure environment-specific settings.
-- [ ] Protect credentials.
-- [ ] Document database setup.
-- [ ] Document backup procedures.
-- [ ] Configure structured logging.
-- [ ] Investigate Docker deployment.
-- [ ] Configure optional CI workflow.
-- [ ] Document startup and shutdown behavior.
+- Protect connection strings.
+- Avoid storing API credentials in database records unless encrypted and necessary.
+- Do not log sensitive personal notes.
+- Use parameterized database operations.
+- Restrict database permissions.
+- Back up persistent data before destructive migrations.
 
-### Deliverable
+## 15. Future Extensions
 
-A deployable and maintainable application.
+Potential additional entities:
 
-## 17. MVP Definition
+- JobTag.
+- JobPostingTag.
+- DuplicateReview.
+- ApplicationStatusHistory.
+- Notification.
+- User.
+- ProviderConfiguration.
+- SearchSchedule.
 
-The MVP must support:
-
-1. Manual job advertisement management.
-2. Multiple source references per advertisement.
-3. Editable search profiles.
-4. Application status tracking.
-5. Advertisement filtering.
-6. Confirmed duplicate prevention.
-7. SQL Server persistence.
-8. REST API.
-9. Blazor interface.
-10. Jooble integration, subject to authorized access.
-11. Manual LinkedIn link support.
-12. Manual No Fluff Jobs link support.
-13. Automatic and manual search execution.
-14. Dashboard statistics.
-15. Automated tests.
-
-## 18. Future Development
-
-Potential future features:
-
-- Email notifications.
-- CV-to-job matching.
-- AI-assisted job ranking.
-- Advanced search recommendations.
-- Interview calendar integration.
-- Application reminders.
-- Additional authorized job providers.
-- Docker-based continuous hosting.
-- Multi-user accounts.
-- Authentication and authorization.
-- Manual duplicate review.
-- Assisted application preparation.
-
-Automatic application submission is not part of the MVP.
-
-## 19. Development Workflow
-
-Each milestone should follow this process:
-
-1. Review relevant requirements.
-2. Implement the smallest functional component.
-3. Write or update tests.
-4. Build the Solution.
-5. Execute relevant tests.
-6. Update documentation.
-7. Commit changes to Git.
-8. Proceed to the next milestone.
-
-## 20. Definition of Done
-
-A milestone is complete when:
-
-- Its required functionality is implemented.
-- The Solution builds successfully.
-- Relevant automated tests pass.
-- Critical defects are resolved.
-- Documentation reflects actual behavior.
-- Changes are committed to version control.
+These are not required for the initial MVP.
