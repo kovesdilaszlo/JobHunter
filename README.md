@@ -1,28 +1,31 @@
 
 # JobHunter
 
-JobHunter is a personal job search aggregation and application tracking platform built with C# and .NET 10.
+JobHunter is a personal job discovery and application tracking web application built with C# and .NET 10.
 
-The application collects job advertisements from supported sources, filters opportunities based on user-defined preferences, and provides a centralized interface for reviewing and tracking job applications.
+The application aims to collect job opportunities from supported sources, eliminate duplicate advertisements, and provide a centralized interface for managing search preferences and tracking applications.
 
 ## Project Status
 
-**Status:** Initial development
+**Status:** Planning and documentation completed for the initial MVP.
 
-The solution structure and architectural design have been defined. Core business logic, persistence, external integrations, and user interface functionality are under development.
+Implementation has not started yet.
 
-## Objectives
+## Project Objectives
 
-- Aggregate job opportunities from multiple sources.
+- Discover junior-level IT job opportunities.
+- Aggregate opportunities from multiple job platforms.
 - Reduce repetitive manual job searching.
-- Detect duplicate job advertisements.
-- Filter opportunities by role, location, and work arrangement.
-- Track application progress.
-- Schedule automatic searches twice per day.
-- Provide a clean, responsive web interface.
-- Support future automation of selected application workflows.
+- Detect duplicate advertisements across sources.
+- Provide configurable search profiles.
+- Track job application statuses.
+- Support automatic and manually triggered searches.
+- Display search results and application statistics.
+- Archive expired or outdated advertisements.
 
-## Target Positions
+## Target Job Positions
+
+Initial search categories:
 
 - Junior C# / .NET Developer
 - Junior Software Developer
@@ -32,11 +35,15 @@ The solution structure and architectural design have been defined. Core business
 - Junior IT Support Specialist
 - Junior System Administrator
 
-## Preferred Locations
+Search categories and keywords will be configurable through the web interface.
+
+## Target Locations
+
+Initial preferences:
 
 - Budapest, Hungary
 - Budapest metropolitan area
-- Remote opportunities available to candidates in Hungary
+- Remote positions available to applicants in Hungary
 
 Supported work arrangements:
 
@@ -44,61 +51,170 @@ Supported work arrangements:
 - Hybrid
 - Remote
 
+## Job Sources
+
+The application is designed to support:
+
+### Jooble
+
+Primary planned automated job source.
+
+Integration through the official Jooble API, subject to API credentials, usage limits, and provider terms.
+
+### LinkedIn
+
+Target job discovery platform.
+
+Initial support will focus on manually saving job advertisement links.
+
+Automated integration will only be considered where officially authorized access is available.
+
+### No Fluff Jobs
+
+Target job discovery platform.
+
+Initial support will focus on manually saving advertisement links.
+
+Automated integration depends on identifying an authorized and technically supported access method.
+
+## Main Features
+
+### Job Advertisement Management
+
+- Store job advertisements.
+- View advertisement details.
+- Save original source links.
+- Filter advertisements.
+- Archive advertisements.
+- Update application status.
+
+### Duplicate Detection
+
+Duplicate detection will use:
+
+1. Provider-specific advertisement identifiers.
+2. Normalized advertisement URLs.
+3. Company name similarity.
+4. Job title similarity.
+5. Location similarity.
+
+Uncertain matches must not be automatically merged without sufficient confidence.
+
+A single logical job posting may reference multiple external sources.
+
+### Search Profiles
+
+Users will be able to:
+
+- Create search profiles.
+- Edit search profiles.
+- Enable or disable profiles.
+- Delete search profiles.
+- Configure keywords and preferred locations.
+- Include or exclude remote opportunities.
+
+### Automatic Search
+
+The application will support scheduled background searches where an authorized provider integration is available.
+
+Planned behavior:
+
+- Check search schedules when the application starts.
+- Execute overdue searches when appropriate.
+- Run searches automatically while the application is running.
+- Support manual execution through a Search Now button.
+- Respect provider API usage limits.
+- Prevent overlapping duplicate search executions.
+
+The initial schedule will be configurable rather than permanently fixed.
+
+### Application Tracking
+
+Supported statuses:
+
+- New
+- Saved
+- Applied
+- Interview
+- Rejected
+- OfferReceived
+
+Applications will initially be submitted manually on the original job platform.
+
+### Dashboard
+
+The dashboard will display:
+
+- Total job advertisements.
+- New opportunities.
+- Saved opportunities.
+- Submitted applications.
+- Interviews.
+- Offers received.
+- Recent search execution results.
+
 ## Technology Stack
 
 | Component | Technology |
 |---|---|
-| Programming Language | C# |
+| Language | C# |
 | Runtime | .NET 10 |
 | Backend | ASP.NET Core Web API |
 | Frontend | Blazor Web App |
 | Architecture | Clean Architecture |
-| ORM | Entity Framework Core 10 |
+| ORM | Entity Framework Core |
 | Database | SQL Server |
 | Testing | xUnit |
 | Version Control | Git |
 | Repository Hosting | GitHub |
 
-## Solution Structure
+## Solution Projects
 
-```text
-JobHunter/
-├── JobHunter.slnx
-├── README.md
-├── docs/
-├── src/
-│   ├── JobHunter.Domain/
-│   ├── JobHunter.Application/
-│   ├── JobHunter.Infrastructure/
-│   ├── JobHunter.API/
-│   └── JobHunter.Presentation/
-└── tests/
-    └── JobHunter.Test/
-```
-
-Actual project locations may differ depending on the Visual Studio solution layout.
+- JobHunter.Domain
+- JobHunter.Application
+- JobHunter.Infrastructure
+- JobHunter.API
+- JobHunter.Presentation
+- JobHunter.Test
 
 ## Architecture
 
-The solution follows Clean Architecture principles.
+The application follows Clean Architecture principles.
 
-- **Domain:** Business entities, enumerations, and rules.
-- **Application:** Use cases, DTOs, service interfaces, and application services.
-- **Infrastructure:** Database access, external integrations, and background processing.
-- **API:** REST endpoints and application configuration.
-- **Presentation:** Blazor-based user interface.
-- **Test:** Automated unit and integration tests.
+- Domain contains business entities and rules.
+- Application contains use cases and abstractions.
+- Infrastructure implements persistence, job providers, and background processing.
+- API exposes HTTP endpoints.
+- Presentation provides the Blazor interface.
+- Test contains automated tests.
 
-## Planned Features
+The Presentation project communicates with the API through HTTP.
 
-1. Manual job posting management.
-2. External job source integrations.
-3. Duplicate detection.
-4. Search filters and saved preferences.
-5. Job application status tracking.
-6. Scheduled background searches.
-7. Dashboard and search history.
-8. Optional application assistance.
+## Development Scope
+
+### Initial MVP
+
+- Job posting management.
+- Editable search profiles.
+- Duplicate detection.
+- Application status tracking.
+- SQL Server persistence.
+- REST API.
+- Blazor user interface.
+- Jooble integration, subject to API access.
+- Scheduled and manual search execution.
+- Basic dashboard.
+- Automated tests.
+
+### Future Features
+
+- Additional authorized provider integrations.
+- Email notifications.
+- Advanced job ranking.
+- CV-to-job matching.
+- Application assistance.
+- Docker deployment.
+- Multi-user support.
 
 ## Documentation
 
@@ -108,36 +224,26 @@ The solution follows Clean Architecture principles.
 - [API Specification](docs/API.md)
 - [Development Guide](docs/DevelopmentGuide.md)
 - [Testing Strategy](docs/Testing.md)
-- [Roadmap](docs/Roadmap.md)
+- [Development Roadmap](docs/Roadmap.md)
 
-## Getting Started
+## Development Environment
 
-### Prerequisites
+Planned environment:
 
 - Visual Studio 2026
 - .NET 10 SDK
-- SQL Server or SQL Server LocalDB
+- SQL Server or LocalDB
 - Git
 
-### Build
+## Security and Compliance
 
-```powershell
-dotnet restore
-dotnet build
-```
-
-### Run
-
-Select `JobHunter.API` or `JobHunter.Presentation` as the startup project in Visual Studio.
-
-The API, database, and frontend integration must be configured before all application features can be used.
-
-## Security
-
-Credentials, API keys, connection secrets, and other sensitive configuration values must not be committed to source control.
-
-Automated interactions with external job platforms must respect applicable terms, privacy requirements, and technical restrictions.
+- Store API keys outside source control.
+- Use HTTPS for external API communication.
+- Validate incoming data and external URLs.
+- Respect external platform terms and API limits.
+- Avoid unauthorized scraping or automated applications.
+- Protect personal application data before exposing the application over a network.
 
 ## License
 
-No license has been selected yet. All rights are reserved unless a license is added.
+No software license has been selected yet.
