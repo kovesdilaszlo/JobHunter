@@ -18,4 +18,9 @@
     <Folder Include="Extensions\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\JobHunter.Application\JobHunter.Application.csproj" />
+    <ProjectReference Include="..\JobHunter.Infrastructure\JobHunter.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>
