@@ -52,4 +52,16 @@ public class EnumTests
     {
         Assert.True(Enum.IsDefined(status));
     }
+
+
+    [Theory]
+    [InlineData(SearchTriggerType.Manual)]
+    [InlineData(SearchTriggerType.Startup)]
+    [InlineData(SearchTriggerType.Scheduled)]
+    public void SearchTriggerType_AllValues_AreDefined(
+        SearchTriggerType triggerType)
+    {
+        Assert.True(Enum.IsDefined(triggerType));
+    }
+
 }
