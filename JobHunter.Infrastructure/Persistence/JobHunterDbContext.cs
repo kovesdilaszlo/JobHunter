@@ -28,6 +28,9 @@ public sealed class JobHunterDbContext : DbContext
     public DbSet<SearchExecution> SearchExecutions =>
         Set<SearchExecution>();
 
+    public DbSet<ApiQuotaUsage> ApiQuotaUsages =>
+        Set<ApiQuotaUsage>();
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
@@ -55,10 +58,13 @@ public sealed class JobHunterDbContext : DbContext
         foreach (var entityType in
                  modelBuilder.Model.GetEntityTypes())
         {
-            foreach (var property in entityType.GetProperties())
+            foreach (var property in
+                     entityType.GetProperties())
             {
-                if (property.ClrType == typeof(DateTimeOffset) ||
-                    property.ClrType == typeof(DateTimeOffset?))
+                if (property.ClrType ==
+                        typeof(DateTimeOffset) ||
+                    property.ClrType ==
+                        typeof(DateTimeOffset?))
                 {
                     property.SetValueConverter(converter);
                 }

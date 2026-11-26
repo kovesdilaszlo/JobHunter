@@ -1,5 +1,4 @@
-﻿
-using JobHunter.Infrastructure.Persistence;
+﻿using JobHunter.Infrastructure.Persistence;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 

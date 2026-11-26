@@ -16,24 +16,18 @@ public class SearchExecution
         SearchTriggerType triggerType)
     {
         if (jobSearchProfileId == Guid.Empty)
-        {
             throw new ArgumentException(
                 "A valid search profile ID is required.",
                 nameof(jobSearchProfileId));
-        }
 
         if (string.IsNullOrWhiteSpace(providerName))
-        {
             throw new ArgumentException(
                 "Provider name cannot be empty.",
                 nameof(providerName));
-        }
 
         if (!Enum.IsDefined(triggerType))
-        {
             throw new ArgumentOutOfRangeException(
                 nameof(triggerType));
-        }
 
         Id = Guid.NewGuid();
         JobSearchProfileId = jobSearchProfileId;
@@ -48,7 +42,8 @@ public class SearchExecution
 
     public Guid JobSearchProfileId { get; private set; }
 
-    public string ProviderName { get; private set; } = string.Empty;
+    public string ProviderName { get; private set; }
+        = string.Empty;
 
     public SearchTriggerType TriggerType { get; private set; }
 
@@ -69,10 +64,8 @@ public class SearchExecution
     public void Start()
     {
         if (Status != SearchExecutionStatus.Pending)
-        {
             throw new InvalidOperationException(
                 "Only pending executions can be started.");
-        }
 
         Status = SearchExecutionStatus.Running;
         StartedAt = DateTimeOffset.UtcNow;
@@ -84,7 +77,11 @@ public class SearchExecution
         int duplicateCount)
     {
         EnsureRunning();
-        ValidateCounts(retrievedCount, insertedCount, duplicateCount);
+
+        ValidateCounts(
+            retrievedCount,
+            insertedCount,
+            duplicateCount);
 
         RetrievedCount = retrievedCount;
         InsertedCount = insertedCount;
@@ -97,16 +94,33 @@ public class SearchExecution
 
     public void Fail(string errorMessage)
     {
+        Fail(errorMessage, 0, 0, 0);
+    }
+
+    public void Fail(
+        string errorMessage,
+        int retrievedCount,
+        int insertedCount,
+        int duplicateCount)
+    {
         EnsureRunning();
 
+        ValidateCounts(
+            retrievedCount,
+            insertedCount,
+            duplicateCount);
+
         if (string.IsNullOrWhiteSpace(errorMessage))
-        {
             throw new ArgumentException(
                 "An error message is required.",
                 nameof(errorMessage));
-        }
+
+        RetrievedCount = retrievedCount;
+        InsertedCount = insertedCount;
+        DuplicateCount = duplicateCount;
 
         ErrorMessage = errorMessage.Trim();
+
         Status = SearchExecutionStatus.Failed;
         CompletedAt = DateTimeOffset.UtcNow;
     }
@@ -118,14 +132,16 @@ public class SearchExecution
         string errorMessage)
     {
         EnsureRunning();
-        ValidateCounts(retrievedCount, insertedCount, duplicateCount);
+
+        ValidateCounts(
+            retrievedCount,
+            insertedCount,
+            duplicateCount);
 
         if (string.IsNullOrWhiteSpace(errorMessage))
-        {
             throw new ArgumentException(
                 "An error message is required.",
                 nameof(errorMessage));
-        }
 
         RetrievedCount = retrievedCount;
         InsertedCount = insertedCount;
@@ -152,10 +168,8 @@ public class SearchExecution
     private void EnsureRunning()
     {
         if (Status != SearchExecutionStatus.Running)
-        {
             throw new InvalidOperationException(
                 "Execution must be running.");
-        }
     }
 
     private static void ValidateCounts(
@@ -172,7 +186,8 @@ public class SearchExecution
                 "Counts cannot be negative.");
         }
 
-        if ((long)insertedCount + duplicateCount > retrievedCount)
+        if ((long)insertedCount + duplicateCount >
+            retrievedCount)
         {
             throw new ArgumentException(
                 "Inserted and duplicate counts cannot exceed retrieved count.");

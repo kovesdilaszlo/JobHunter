@@ -1,4 +1,5 @@
 
+using JobHunter.API.Services;
 using JobHunter.Application.Interfaces;
 using JobHunter.Application.Services;
 using JobHunter.Infrastructure;
@@ -35,11 +36,9 @@ builder.Services.AddSingleton<
     IJobImportLock,
     JobImportLock>();
 
-// Original import service
+// Import services
 
 builder.Services.AddScoped<JobImportService>();
-
-// Synchronized import service
 
 builder.Services.AddScoped<IJobImportService>(
     serviceProvider =>
@@ -48,6 +47,16 @@ builder.Services.AddScoped<IJobImportService>(
                 .GetRequiredService<JobImportService>(),
             serviceProvider
                 .GetRequiredService<IJobImportLock>()));
+
+// Search execution services
+
+builder.Services.AddScoped<
+    ISearchImportRunner,
+    ScopedSearchImportRunner>();
+
+builder.Services.AddScoped<
+    ISearchExecutionService,
+    SearchExecutionService>();
 
 var app = builder.Build();
 
