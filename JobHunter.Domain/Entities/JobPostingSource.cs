@@ -1,5 +1,6 @@
 ﻿
 using JobHunter.Domain.Enums;
+using JobHunter.Domain.Utilities;
 
 namespace JobHunter.Domain.Entities;
 
@@ -16,9 +17,15 @@ public class JobPostingSource
         string? externalId = null)
     {
         if (!Enum.IsDefined(sourceType))
-            throw new ArgumentOutOfRangeException(nameof(sourceType));
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(sourceType));
+        }
 
-        if (!Uri.TryCreate(originalUrl, UriKind.Absolute, out var uri) ||
+        if (!Uri.TryCreate(
+                originalUrl,
+                UriKind.Absolute,
+                out var uri) ||
             (uri.Scheme != Uri.UriSchemeHttp &&
              uri.Scheme != Uri.UriSchemeHttps))
         {
@@ -28,9 +35,16 @@ public class JobPostingSource
         }
 
         Id = Guid.NewGuid();
+
         SourceType = sourceType;
+
         OriginalUrl = uri.AbsoluteUri;
-        NormalizedUrl = NormalizeUrl(uri);
+
+        NormalizedUrl = UrlNormalizer.Normalize(originalUrl);
+
+        UrlFingerprint =
+            UrlNormalizer.CreateFingerprint(originalUrl);
+
         ExternalId = string.IsNullOrWhiteSpace(externalId)
             ? null
             : externalId.Trim();
@@ -50,6 +64,8 @@ public class JobPostingSource
 
     public string NormalizedUrl { get; private set; } = string.Empty;
 
+    public string UrlFingerprint { get; private set; } = string.Empty;
+
     public DateTimeOffset DiscoveredAt { get; private set; }
 
     public DateTimeOffset? LastSeenAt { get; private set; }
@@ -62,9 +78,11 @@ public class JobPostingSource
     internal void AssignToJob(Guid jobPostingId)
     {
         if (jobPostingId == Guid.Empty)
+        {
             throw new ArgumentException(
                 "A valid job identifier is required.",
                 nameof(jobPostingId));
+        }
 
         if (JobPostingId != Guid.Empty &&
             JobPostingId != jobPostingId)
@@ -74,15 +92,5 @@ public class JobPostingSource
         }
 
         JobPostingId = jobPostingId;
-    }
-
-    private static string NormalizeUrl(Uri uri)
-    {
-        var builder = new UriBuilder(uri)
-        {
-            Fragment = string.Empty
-        };
-
-        return builder.Uri.AbsoluteUri.TrimEnd('/');
     }
 }

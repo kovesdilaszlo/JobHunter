@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 using JobHunter.Application.DTOs;
 using JobHunter.Application.Enums;
 using JobHunter.Application.Interfaces;
-using JobHunter.Domain.Entities;
+using JobHunter.Domain.Utilities;
 
 namespace JobHunter.Application.Services;
 
@@ -12,21 +12,12 @@ public sealed class DuplicateDetectionService
 {
     private readonly IJobRepository _repository;
 
-    private static readonly HashSet<string> TrackingParameters =
-        new(StringComparer.OrdinalIgnoreCase)
-        {
-            "fbclid",
-            "gclid",
-            "msclkid",
-            "ref",
-            "ref_src",
-            "source"
-        };
-
-    public DuplicateDetectionService(IJobRepository repository)
+    public DuplicateDetectionService(
+        IJobRepository repository)
     {
         _repository = repository
-            ?? throw new ArgumentNullException(nameof(repository));
+            ?? throw new ArgumentNullException(
+                nameof(repository));
     }
 
     public async Task<DuplicateCheckResult> CheckAsync(
@@ -42,12 +33,17 @@ public sealed class DuplicateDetectionService
                 "Invalid source type.");
         }
 
-        var normalizedUrl = NormalizeUrl(request.SourceUrl);
+        var normalizedUrl =
+            UrlNormalizer.Normalize(request.SourceUrl);
+
+        var fingerprint =
+            UrlNormalizer.CreateFingerprint(request.SourceUrl);
 
         var jobs = await _repository.GetAllAsync(
             cancellationToken);
 
-        // 1. Provider + external ID.
+        // Level 1: Provider and external identifier.
+
         if (!string.IsNullOrWhiteSpace(request.ExternalId))
         {
             var externalId = request.ExternalId.Trim();
@@ -69,22 +65,23 @@ public sealed class DuplicateDetectionService
             }
         }
 
-        // 2. Normalized URL.
+        // Level 2: URL fingerprint.
+
         foreach (var job in jobs)
         {
-            foreach (var source in job.Sources)
+            if (job.Sources.Any(source =>
+                source.UrlFingerprint == fingerprint &&
+                source.NormalizedUrl == normalizedUrl))
             {
-                if (NormalizeUrl(source.OriginalUrl) == normalizedUrl)
-                {
-                    return new DuplicateCheckResult(
-                        DuplicateMatchType.NormalizedUrl,
-                        job.Id,
-                        "Matching normalized URL.");
-                }
+                return new DuplicateCheckResult(
+                    DuplicateMatchType.NormalizedUrl,
+                    job.Id,
+                    "Matching normalized URL.");
             }
         }
 
-        // 3. Conservative metadata comparison.
+        // Level 3: Conservative metadata comparison.
+
         var title = NormalizeText(request.Title);
         var company = NormalizeText(request.Company);
         var location = NormalizeText(request.Location);
@@ -115,67 +112,7 @@ public sealed class DuplicateDetectionService
 
     public static string NormalizeUrl(string url)
     {
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
-            (uri.Scheme != Uri.UriSchemeHttp &&
-             uri.Scheme != Uri.UriSchemeHttps))
-        {
-            throw new ArgumentException(
-                "A valid HTTP or HTTPS URL is required.",
-                nameof(url));
-        }
-
-        var builder = new UriBuilder(uri)
-        {
-            Fragment = string.Empty,
-            Query = string.Empty
-        };
-
-        var parameters = new List<KeyValuePair<string, string>>();
-
-        var query = uri.Query.TrimStart('?');
-
-        if (!string.IsNullOrEmpty(query))
-        {
-            foreach (var part in query.Split('&',
-                StringSplitOptions.RemoveEmptyEntries))
-            {
-                var pieces = part.Split('=', 2);
-
-                var key = Uri.UnescapeDataString(
-                    pieces[0].Replace("+", " "));
-
-                if (key.StartsWith(
-                        "utm_",
-                        StringComparison.OrdinalIgnoreCase) ||
-                    TrackingParameters.Contains(key))
-                {
-                    continue;
-                }
-
-                var value = pieces.Length > 1
-                    ? Uri.UnescapeDataString(
-                        pieces[1].Replace("+", " "))
-                    : string.Empty;
-
-                parameters.Add(
-                    new KeyValuePair<string, string>(key, value));
-            }
-        }
-
-        if (parameters.Count > 0)
-        {
-            builder.Query = string.Join("&",
-                parameters
-                    .OrderBy(p => p.Key, StringComparer.Ordinal)
-                    .ThenBy(p => p.Value, StringComparer.Ordinal)
-                    .Select(p =>
-                        $"{Uri.EscapeDataString(p.Key)}=" +
-                        $"{Uri.EscapeDataString(p.Value)}"));
-        }
-
-        var result = builder.Uri.AbsoluteUri.TrimEnd('/');
-
-        return result;
+        return UrlNormalizer.Normalize(url);
     }
 
     public static string NormalizeText(string? text)
@@ -183,13 +120,9 @@ public sealed class DuplicateDetectionService
         if (string.IsNullOrWhiteSpace(text))
             return string.Empty;
 
-        var normalized = text.Trim().ToLowerInvariant();
-
-        normalized = Regex.Replace(
-            normalized,
+        return Regex.Replace(
+            text.Trim().ToLowerInvariant(),
             @"\s+",
             " ");
-
-        return normalized;
     }
 }

@@ -1,4 +1,9 @@
 <Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Default" />
+    <BuildType Name="Release" />
+  </Configurations>
   <Folder Name="/docs/">
     <File Path="API.md" />
     <File Path="Architecture.md" />
@@ -10,21 +15,34 @@
   </Folder>
   <Folder Name="/src/" />
   <Folder Name="/src/API/">
-    <Project Path="JobHunter.API/JobHunter.API.csproj" />
+    <Project Path="JobHunter.API/JobHunter.API.csproj">
+      <BuildType Solution="Default|*" Project="Release" />
+    </Project>
   </Folder>
   <Folder Name="/src/Application/">
-    <Project Path="JobHunter.Application/JobHunter.Application.csproj" />
+    <Project Path="JobHunter.Application/JobHunter.Application.csproj">
+      <BuildType Solution="Default|*" Project="Release" />
+    </Project>
   </Folder>
   <Folder Name="/src/Domain/">
-    <Project Path="JobHunter.Domain/JobHunter.Domain.csproj" />
+    <Project Path="JobHunter.Domain/JobHunter.Domain.csproj">
+      <BuildType Solution="Default|*" Project="Release" />
+    </Project>
   </Folder>
   <Folder Name="/src/Infrastructure/">
-    <Project Path="JobHunter.Infrastructure/JobHunter.Infrastructure.csproj" />
+    <File Path="DependencyInjection.cs" />
+    <Project Path="JobHunter.Infrastructure/JobHunter.Infrastructure.csproj">
+      <BuildType Solution="Default|*" Project="Release" />
+    </Project>
   </Folder>
   <Folder Name="/src/Presentation/">
-    <Project Path="JobHunter.Presentation/JobHunter.Presentation.csproj" />
+    <Project Path="JobHunter.Presentation/JobHunter.Presentation.csproj">
+      <BuildType Solution="Default|*" Project="Release" />
+    </Project>
   </Folder>
   <Folder Name="/src/Test/">
-    <Project Path="JobHunter.Test/JobHunter.Test.csproj" />
+    <Project Path="JobHunter.Test/JobHunter.Test.csproj">
+      <BuildType Solution="Default|*" Project="Release" />
+    </Project>
   </Folder>
 </Solution>

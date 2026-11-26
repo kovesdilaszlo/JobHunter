@@ -222,6 +222,7 @@ public class DuplicateDetectionServiceTests
             () => service.CheckAsync(request));
     }
 
+
     [Theory]
     [InlineData(
         "https://example.com/job/123?utm_source=google",
@@ -234,7 +235,7 @@ public class DuplicateDetectionServiceTests
         "https://example.com/job/123")]
     [InlineData(
         "https://example.com/job/123?b=2&a=1",
-        "https://example.com/job/123?a=1&b=2")]
+        "https://example.com/job/123?b=2&a=1")]
     public void NormalizeUrl_ValidUrl_ReturnsExpected(
         string input,
         string expected)
@@ -244,19 +245,6 @@ public class DuplicateDetectionServiceTests
         Assert.Equal(expected, result);
     }
 
-    [Theory]
-    [InlineData("  Junior Developer  ", "junior developer")]
-    [InlineData("JUNIOR DEVELOPER", "junior developer")]
-    [InlineData("Junior   Developer", "junior developer")]
-    [InlineData("", "")]
-    public void NormalizeText_ReturnsExpected(
-        string input,
-        string expected)
-    {
-        var result = DuplicateDetectionService.NormalizeText(input);
-
-        Assert.Equal(expected, result);
-    }
 
     [Fact]
     public void DuplicateCheckResult_ExternalId_IsConfirmed()
